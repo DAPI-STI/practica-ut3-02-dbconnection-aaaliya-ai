@@ -1,72 +1,48 @@
 from __future__ import annotations
+import sys
+import os
 
-from .db import get_connection
-from .incidencias import (
-    asignar_tecnico,
-    cerrar_incidencia,
-    crear_incidencia,
-    detalle_incidencias_join,
-    listar_incidencias_activas,
-    listar_incidencias_sin_tecnico,
+# Añadimos la raíz al path para evitar líos de módulos
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+from src.db import get_connection
+from src.incidencias import (
+    asignar_tecnico, cerrar_incidencia, crear_incidencia,
+    detalle_incidencias_join, listar_incidencias_activas, listar_incidencias_sin_tecnico
 )
 
-
 def main() -> None:
-    """Menú de consola simple para probar las funciones de acceso a BD."""
-    conn = get_connection()
     try:
+        conn = get_connection()
         while True:
             print("\n=== STI Incidencias ===")
-            print("1) Listar incidencias activas")
-            print("2) Listar incidencias sin técnico")
-            print("3) Crear incidencia")
-            print("4) Asignar técnico")
-            print("5) Cerrar incidencia")
-            print("6) Vista JOIN (detalle)")
-            print("0) Salir")
+            print("1) Listar activas | 2) Sin técnico | 3) Crear | 4) Asignar | 5) Cerrar | 6) Detalle | 0) Salir")
             op = input("Opción: ").strip()
-
-            if op == "0":
-                break
-
+            if op == "0": break
+            
             if op == "1":
-                rows = listar_incidencias_activas(conn)
-                for r in rows:
-                    print(r)
-
+                for r in listar_incidencias_activas(conn): print(r)
             elif op == "2":
-                rows = listar_incidencias_sin_tecnico(conn)
-                for r in rows:
-                    print(r)
-
+                for r in listar_incidencias_sin_tecnico(conn): print(r)
             elif op == "3":
-                equipo_id = int(input("equipo_id: ").strip())
-                descripcion = input("descripcion: ").strip()
-                prioridad = input("prioridad (baja/media/alta) [media]: ").strip() or "media"
-                n = crear_incidencia(conn, equipo_id, descripcion, prioridad)
-                print(f"Incidencia creada (filas afectadas: {n}).")
-
+                eid = int(input("equipo_id: "))
+                desc = input("descripcion: ")
+                prio = input("prioridad (baja/media/alta): ") or "media"
+                print(f"Filas: {crear_incidencia(conn, eid, desc, prio)}")
             elif op == "4":
-                incidencia_id = int(input("incidencia_id: ").strip())
-                tecnico_id = int(input("tecnico_id: ").strip())
-                n = asignar_tecnico(conn, incidencia_id, tecnico_id)
-                print(f"Asignación realizada (filas afectadas: {n}).")
-
+                iid = int(input("incidencia_id: "))
+                tid = int(input("tecnico_id: "))
+                print(f"Filas: {asignar_tecnico(conn, iid, tid)}")
             elif op == "5":
-                incidencia_id = int(input("incidencia_id: ").strip())
-                n = cerrar_incidencia(conn, incidencia_id)
-                print(f"Cierre realizado (filas afectadas: {n}).")
-
+                iid = int(input("incidencia_id: "))
+                print(f"Filas: {cerrar_incidencia(conn, iid)}")
             elif op == "6":
-                rows = detalle_incidencias_join(conn)
-                for r in rows:
-                    print(r)
-
-            else:
-                print("Opción no válida.")
-    finally:
+                for r in detalle_incidencias_join(conn): print(r)
         conn.close()
-
+    except Exception as e:
+        print(f"Error: {e}")
 
 if __name__ == "__main__":
     main()
+
+
